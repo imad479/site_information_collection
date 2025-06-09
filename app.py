@@ -4,6 +4,11 @@ import plotly.express as px
 import requests
 import io
 from requests.auth import HTTPBasicAuth
+headers = {
+    "Authorization": "edac13bbcd3ba6d893c5881597e740a338e2ca1a"
+}
+response = requests.get(url, headers=headers)
+
 
 # --- CONFIGURE KOBO CONNECTION ---
 username = "imad479"
