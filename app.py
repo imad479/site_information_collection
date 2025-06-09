@@ -15,6 +15,12 @@ form_uids = [
     "abTW6BtavKXD9ekXbeMhav",
     "apU47ShsSjs2owJKF4286M"
 ]
+    for uid in form_uids:
+        api_url = f"https://kf.kobotoolbox.org/api/v2/assets/{uid}/data.json"
+        response = requests.get(api_url, auth=HTTPBasicAuth(username, password))
+        if response.status_code == 200:
+            results = response.json().get("results", [])
+            st.write(f"Form UID {uid}: {len(results)} records")
 
 @st.cache_data(ttl=3600)
 def load_data():
