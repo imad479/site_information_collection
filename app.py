@@ -20,7 +20,7 @@ form_uids = [
 def load_data():
     combined_df = pd.DataFrame()
     for uid in form_uids:
-        api_url = f"https://kf.kobotoolbox.org/api/v2/assets/{uid}/data.json"
+        api_url = f"https://eu.kobotoolbox.org/api/v2/assets/{uid}/data.json"
         response = requests.get(api_url, auth=HTTPBasicAuth(username, password))
         if response.status_code == 200:
             data = response.json().get("results", [])
