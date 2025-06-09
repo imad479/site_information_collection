@@ -7,7 +7,7 @@ from requests.auth import HTTPBasicAuth
 
 # --- CONFIGURE KOBO CONNECTION ---
 username = "imad479"
-password = "1m@dL2dh1@1234"
+password = "1m@dL@dh1@1234"
 form_uids = [
     "a93k5tBLafPoXgCessToMp",
     "azNkMX2aQEcLkRfrtZen9w",
