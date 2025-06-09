@@ -5,7 +5,7 @@ import requests
 import io
 from requests.auth import HTTPBasicAuth
 
-# --- KOBO CONFIG ---
+# --- CONFIGURE KOBO CONNECTION ---
 username = "imad479"
 password = "1m@dL2dh1@1234"
 form_uids = [
@@ -15,46 +15,41 @@ form_uids = [
     "abTW6BtavKXD9ekXbeMhav",
     "apU47ShsSjs2owJKF4286M"
 ]
-    for uid in form_uids:
-        api_url = f"https://kf.kobotoolbox.org/api/v2/assets/{uid}/data.json"
-        response = requests.get(api_url, auth=HTTPBasicAuth(username, password))
-        if response.status_code == 200:
-            results = response.json().get("results", [])
-            st.write(f"Form UID {uid}: {len(results)} records")
 
 @st.cache_data(ttl=3600)
 def load_data():
-    all_data = []
+    combined_df = pd.DataFrame()
     for uid in form_uids:
         api_url = f"https://kf.kobotoolbox.org/api/v2/assets/{uid}/data.json"
         response = requests.get(api_url, auth=HTTPBasicAuth(username, password))
         if response.status_code == 200:
-            results = response.json().get("results", [])
-            if results:
-                all_data.append(pd.DataFrame(results))
-    if all_data:
-        return pd.concat(all_data, ignore_index=True)
-    return pd.DataFrame()
+            data = response.json().get("results", [])
+            st.write(f"✅ Form UID `{uid}` fetched: {len(data)} records")
+            df = pd.DataFrame(data)
+            if not df.empty:
+                combined_df = pd.concat([combined_df, df], ignore_index=True)
+        else:
+            st.error(f"❌ Failed to fetch data for UID: {uid}")
+    return combined_df
 
 # --- SIDEBAR FILTERS ---
 st.sidebar.title("🔍 Filters")
 df = load_data()
 
 if df.empty:
-    st.warning("No data found from any form.")
+    st.warning("⚠️ No data found from any form.")
     st.stop()
 
-# Filter dropdowns
+# Adjust column names as needed
 user_column = "username"
 district_column = "_1_1_Name_of_the_City_"
 
-usernames = df[user_column].dropna().unique()
-districts = df[district_column].dropna().unique()
+usernames = df[user_column].dropna().unique() if user_column in df else []
+districts = df[district_column].dropna().unique() if district_column in df else []
 
-selected_user = st.sidebar.selectbox("Select Username", options=['All'] + sorted(usernames))
-selected_district = st.sidebar.selectbox("Select District", options=['All'] + sorted(districts))
+selected_user = st.sidebar.selectbox("Select Username", options=['All'] + list(usernames))
+selected_district = st.sidebar.selectbox("Select District", options=['All'] + list(districts))
 
-# Apply filters
 if selected_user != 'All':
     df = df[df[user_column] == selected_user]
 if selected_district != 'All':
@@ -63,15 +58,15 @@ if selected_district != 'All':
 st.sidebar.markdown(f"### Total Rows: {len(df)}")
 
 # --- MAIN DASHBOARD ---
-st.title("📊 Site Information Collection (Live Dashboard)")
+st.title("📊 Site Information Collection (Live)")
 st.write("Filtered Dataset:")
 st.dataframe(df, use_container_width=True)
 
-# --- STATS ---
+# --- STATISTICS ---
 st.markdown("### 📈 Summary Statistics")
 st.write(df.describe(include='all'))
 
-# --- VISUALIZATION ---
+# --- INTERACTIVE VISUALS ---
 st.markdown("### 📊 Visualizations")
 col_x = st.selectbox("Select X-axis column", df.columns)
 numeric_cols = df.select_dtypes(include='number').columns
@@ -89,15 +84,14 @@ elif chart_type == "Histogram" and col_y:
     fig = px.histogram(df, x=col_y, title="Histogram")
     st.plotly_chart(fig, use_container_width=True)
 
+st.success("✅ Dashboard loaded with multiple Kobo forms!")
+
 # --- DATA DOWNLOAD ---
-st.markdown("### 📥 Download Filtered Data")
+st.markdown("### 📥 Download Data")
 col1, col2 = st.columns(2)
 
 csv = df.to_csv(index=False).encode('utf-8')
 excel_io = io.BytesIO()
 df.to_excel(excel_io, index=False, engine='openpyxl')
-
 col1.download_button("Download CSV", csv, "filtered_data.csv", "text/csv")
 col2.download_button("Download Excel", excel_io.getvalue(), "filtered_data.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-
-st.success("✅ Dashboard loaded successfully.")
